@@ -12,6 +12,7 @@ import streamlit as st
 from datetime import datetime
 import sys
 import time
+import torch
 import itertools
 from datetime import datetime as dt, timedelta
 import random
@@ -2044,7 +2045,7 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
                             revenue[i] = calculate_revenue(x[idx[i]], C1_values[i], C2_values[i], C3_values[i], C4_values[i], CURVE_TYPE_values[i], CPM_values[i]*CPM_ADJU[i], adjustment_factor_values[i], ref_adj_fctr_values[i], tactic_adj_fctr_values[i]*COEF_ADJU[i], seasonal_adj_fctr_values[i], ADSTOCK_X_values[i], ECOMM_ROI_values[i])
                         # print("Profit :",np.sum(revenue),"Spend :",np.sum(x))
                         return -np.sum(revenue)
-                    import torch
+                  
                    
 
                     # ---------------------- HILL FUNCTION ----------------------
