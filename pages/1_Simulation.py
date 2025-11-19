@@ -249,7 +249,7 @@ def linear(x, c1, c2, CPM, adjustment_factor, ref_adj_fctr, tactic_adj_fctr, sea
 def get_snowflake_data():
 
     #data = pd.read_csv(r'C:\Users\Prakhar.saxena\Downloads\Amout_Calc_22-7-25.csv')
-    data = pd.read_excel(r'https://github.com/Ghanshyam-Devops/New_Tool/blob/b5fd4e51a21f628b4d69f6fd3bd8012bd63c314a/Input_data.xlsx')
+    data = pd.read_excel(r'New_Tool/blob/b5fd4e51a21f628b4d69f6fd3bd8012bd63c314a/Input_data.xlsx')
     # data.drop('BRAND', inplace=True, axis=1)
     
     # column_lengths = {col: len(col) for col in data.columns}
