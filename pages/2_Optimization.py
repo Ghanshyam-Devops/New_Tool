@@ -246,7 +246,7 @@ def objective_to_minimize(x, df):
 def get_snowflake_data():
 
     #data = pd.read_csv(r'C:\Users\Prakhar.saxena\Downloads\Amout_Calc_22-7-25.csv')
-    data = pd.read_excel(r'input_data.xlsx')
+    data = pd.read_excel(r'Input_data.xlsx')
 
     
     # column_lengths = {col: len(col) for col in data.columns}
@@ -411,7 +411,7 @@ def get_snowflake_data():
 #     return snapshot_data, sim_snowflake_data
 
 
-output_path = "Optimization Output Files\Book1.csv"
+output_path = "Output_data.csv"
 
 if os.path.exists(output_path):
     try:
@@ -2325,7 +2325,7 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
     
                         return data
 
-                    df_compare=pd.read_excel(r'Data_07Nov\final_response_curves.xlsx',sheet_name='response_curves')
+                    df_compare=pd.read_excel(r'final_response_curves.xlsx',sheet_name='response_curves')
                     df_compare = df_compare[df_compare['metric'] == 'mean']
                     # df_compare['channel']=df_compare['channel'].str.replace(r'\btotal\b', '', regex=True)
                     data=update_optimized_profit_by_tactic(data,df_compare)
@@ -2370,7 +2370,7 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
 
                     # st.dataframe(data)
                     # st.write(result['message'])                 
-                    output_path = "Optimization Output Files\Book1.csv"
+                    output_path = "Output_data.csv"
                     job = data['JOB_ID'].iloc[0]
                     scenario = data['COMMENTS'].iloc[0]
 
