@@ -412,7 +412,7 @@ def get_snowflake_data():
 #     return snapshot_data, sim_snowflake_data
 
 
-output_path = "Optimization Output Files\Book1.csv"
+output_path = "output_file.csv"
 
 if os.path.exists(output_path):
     try:
@@ -2423,7 +2423,7 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
 
                     # st.dataframe(data)
                     # st.write(result['message'])                 
-                    output_path = "Optimization Output Files\Book1.csv"
+                    output_path = "output_file.csv"
                     job = data['JOB_ID'].iloc[0]
                     scenario = data['COMMENTS'].iloc[0]
 
