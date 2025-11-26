@@ -1,6 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
+from auth import require_login
 
+require_login()
 def main():
     st.set_page_config(page_title="C5i Analytics Suite", layout="wide", page_icon="❄️")
     
@@ -106,7 +108,7 @@ def main():
     ]
     
         # Add custom CSS for fixed height
- 
+    
 
     # Render the features inside fixed-height cards
     for col, (icon, title, details) in zip([col1, col2, col3], features):

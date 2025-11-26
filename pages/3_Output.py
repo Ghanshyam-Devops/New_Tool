@@ -17,7 +17,9 @@ import itertools
 from pathlib import Path
 import re
  
+from auth import require_login
 
+require_login()
 
 
 
@@ -172,7 +174,7 @@ def get_snowflake_Data(date = (None, None), actual_data_yr_filter1 = "2025_04 Ro
 
     #st.dataframe(output_history_data.head(2))
 
-    output_history_data = pd.read_csv("Output_data.csv")
+    output_history_data = pd.read_csv("Optimization Output Files\Book1.csv")
     # st.write(output_history_data.shape
     output_history_data = output_history_data.reset_index(drop=True)
     # output_history_data
@@ -284,9 +286,20 @@ def report_generate(output_df):
     final_grp_output_df=final_grp_output_df.drop_duplicates().reset_index(drop=True)
 
     final_grp_output_df=final_grp_output_df.merge(for_order, on=['Brand','Tactic'])
-    final_grp_output_df['Value']=np.where(final_grp_output_df['Measure'] =='SPEND', final_grp_output_df['Value'].fillna(0).astype(int), final_grp_output_df['Value'])
-    final_grp_output_df['Value']=np.where(final_grp_output_df['Measure'] =='FEC', final_grp_output_df['Value'].fillna(0).astype(int), final_grp_output_df['Value'])
-        
+    # final_grp_output_df
+    # Clean values (shared logic)
+    clean = final_grp_output_df['Value'].replace([np.inf, -np.inf], 0).fillna(0)
+
+    # Apply ROI rule (float, 2 decimals)
+    final_grp_output_df.loc[final_grp_output_df['Measure'] == 'ROI', 'Value'] = (
+        clean.round(2)
+    )
+
+    # Apply SPEND/FEC rule (int)
+    final_grp_output_df.loc[
+        final_grp_output_df['Measure'].isin(['SPEND', 'FEC']), 'Value'
+    ] = clean.astype(int)
+ 
     st.session_state['final_grp_output_df']=final_grp_output_df
 
     Delta_df=pd.concat([FECdelta_grp,Spenddelta_grp]).merge(for_order, on='Tactic').sort_values(by='row_numbers')
@@ -378,7 +391,7 @@ def sidebarcontent():
         with st.sidebar.container(border=True):
             Yr_filter =st.selectbox(" Scenario Year list:", [2025])
     
-        with st.sidebar.container(border=True):
+        with st.sidebar.container(border=False):
             if Yr_filter == 2024:
                 month_list=[ "Sep-24", "Oct-24", "Nov-24", "Dec-24"]
             elif Yr_filter == 2025:
@@ -403,7 +416,7 @@ def sidebarcontent():
         # st.session_state['output_history_data']
         # st.write(st.session_state.actual_data.head())
         
-        with st.sidebar.container(border=True):
+        with st.sidebar.container(border=False):
             # f1_=st.session_state.actual_data['RAW_ROLLUP_NAME'].unique().tolist()
             # f1_.sort(reverse=True)
             
@@ -412,7 +425,7 @@ def sidebarcontent():
             # actual_data_yr_filter1=st.selectbox("Select the Batch Rollup and Period 1",f1_,index=0) #,index ='2024_09 Rollup--2024 Yr'
             actual_data_yr_filter1 = "2025_04 Rollup v2"
             
-        with st.sidebar.container(border=True):
+        with st.sidebar.container(border=False):
             # actual_data_yr_filter2_list=list(filter(lambda x: x != actual_data_yr_filter1, st.session_state.actual_data['SONIC_YEAR'].unique().tolist()))
             # # f2_index=actual_data_yr_filter2_list.index('2024_09 Rollup--2025 Yr')
             # actual_data_yr_filter2=st.multiselect("Select the Year",actual_data_yr_filter2_list,default=[2025])
@@ -1336,7 +1349,7 @@ def report_pages():
     grouped_output_og=grouped_output
 
     
-    col_size=[.9,.9,.9,.9,.9,.6,2]
+    col_size=[.9,.9,.9,.9,.9,.6,1.2]
     # with st.container(border=True):   
     #     cols   = st.columns(col_size)
     #     fields = ["Optim/Sim","Brand","Scenarious","Created Date","Status"]
@@ -1353,32 +1366,32 @@ def report_pages():
     st.session_state.setdefault('page', 1)
 
 
-    col1, spacer1, col2, spacer2, col3 = st.columns([1, 3, 1, 3, 1])
+    col1, spacer1, col2, spacer2, col3 = st.columns([2, 3, 1, 3, 1])
 
     with col1:
 
-        st.markdown("""
-            <style>
-            button[kind="primary"], button[kind="secondary"], .stButton > button {
-                font-size: 1.5rem !important;
-                font-weight: normal !important;
-            }
-            </style>
-        """, unsafe_allow_html=True)
+        # st.markdown("""
+        #     <style>
+        #     button[kind="primary"], button[kind="secondary"], .stButton > button {
+        #         font-size: 10.5rem !important;
+        #         font-weight: normal !important;
+        #     }
+        #     </style>
+        # """, unsafe_allow_html=True)
         
         if st.button("Previous", key = "prev") and st.session_state['page'] > 1:
             st.session_state['page'] -= 1
 
     with col3:
 
-        st.markdown("""
-            <style>
-            button[kind="primary"], button[kind="secondary"], .stButton > button {
-                font-size: 1.5rem !important;
-                font-weight: normal !important;
-            }
-            </style>
-        """, unsafe_allow_html=True)
+        # st.markdown("""
+        #     <style>
+        #     button[kind="primary"], button[kind="secondary"], .stButton > button {
+        #         font-size: 10.5rem !important;
+        #         font-weight: normal !important;
+        #     }
+        #     </style>
+        # """, unsafe_allow_html=True)
         
         if st.button("Next", key = "next") and st.session_state['page'] < total_pages:
             st.session_state['page'] += 1
@@ -1403,7 +1416,7 @@ def report_pages():
     paged_df = grouped_output.iloc[start_idx:end_idx]
     #paged_df
 
-    with st.container(border=True):
+    with st.container(border=False):
 
         #st.write(col_size)
         for index, row in paged_df.iterrows():
@@ -1465,7 +1478,7 @@ def report_pages():
 
                 show_more   = placeholder.button("📃 View", key=index, type="primary", use_container_width = True)
                 with col13:
-                    b1,b2,b3=st.columns(3)
+                    b1,b2=st.columns(2)
                     
                     downlaod_b = b1.empty()
                     dwl=output[output['JOB_ID']==row[2]]
@@ -1508,27 +1521,27 @@ def report_pages():
                     if 'checkbox_checked' not in st.session_state:
                         st.session_state.checkbox_checked = False
                         
-                    s_b3=b3.empty()
+                    # s_b3=b3.empty()
 
-                    def shared(row_key, is_disabled):
-                        return s_b3.checkbox("Share", key=row_key, disabled=is_disabled, value=is_disabled)
+                    # def shared(row_key, is_disabled):
+                    #     return s_b3.checkbox("Share", key=row_key, disabled=is_disabled, value=is_disabled)
                         
-                    if is_disabled==True:
-                        try:
-                            s_b3.button("✅ Shared", key=int(row[2])**2,help="This Scenario is Shared", disabled=True)
-                        except:
-                            pass
-                    else:
-                        share = shared(row[2], is_disabled)
+                    # if is_disabled==True:
+                    #     try:
+                    #         s_b3.button("✅ Shared", key=int(row[2])**2,help="This Scenario is Shared", disabled=True)
+                    #     except:
+                    #         pass
                     # else:
-                    #     share=st.checkbox("",key=row[2])
-                        if share and is_disabled==False:
-                            s_df=pd.DataFrame([[row[2]]],columns=['SHARED_JOBID'])
+                    #     share = shared(row[2], is_disabled)
+                    # # else:
+                    # #     share=st.checkbox("",key=row[2])
+                    #     if share and is_disabled==False:
+                    #         s_df=pd.DataFrame([[row[2]]],columns=['SHARED_JOBID'])
                             
-                            session.create_dataframe(s_df).write.mode("append").save_as_table("ANALYTICS.UMM_OPTIM.PROD_SONIC_SHARED_OUTPUT_TABLE")
-                            # st.session_state.checkbox_checked = True
-                            # st.rerun()
-                            s_b3.button("✅ Shared", key=int(row[2])**2,help="This Scenario is Shared",  disabled=True)
+                    #         session.create_dataframe(s_df).write.mode("append").save_as_table("ANALYTICS.UMM_OPTIM.PROD_SONIC_SHARED_OUTPUT_TABLE")
+                    #         # st.session_state.checkbox_checked = True
+                    #         # st.rerun()
+                    #         s_b3.button("✅ Shared", key=int(row[2])**2,help="This Scenario is Shared",  disabled=True)
                             
                 with st.container():
 
@@ -1619,7 +1632,7 @@ def report_pages():
                                     html_output = cards_html(target_name,format_currency(S_FEC),format_currency(O_FEC),str(round(abs((S_FEC/O_FEC) - 1)*100,2))+"%" ,format_currency(S_FEC-O_FEC),'#f0d3d9', (102, 51, 51), 18, 20, "example-icon", )
                                     
                                     st.markdown(lnk + html_output, unsafe_allow_html=True)
-                            st.markdown("")
+                        st.markdown("")
                         
                         # tab1, tab2,tab3 = st.tabs(["📊Comparison Chart","📈 FEC Delta Chart", "🛢 Detail Report"])
                     
@@ -1697,7 +1710,7 @@ def main():
 
             }
             
-            div.st-emotion-cache-1d8vwwt.e1lln2w84
+            div.st-emotion-cache-qbiigm.e1wguzas3
             {
             background-color: #ffffff;
             }

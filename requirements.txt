@@ -6,4 +6,3 @@ scipy
 torchdata
 matplotlib
 openpyxl
-uvicorn

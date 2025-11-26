@@ -12,7 +12,6 @@ import streamlit as st
 from datetime import datetime
 import sys
 import time
-import torch
 import itertools
 from datetime import datetime as dt, timedelta
 import random
@@ -22,7 +21,9 @@ from scipy.optimize import curve_fit#
 from itertools import cycle
 from scipy.optimize import minimize   # Importing the minimize function from scipy.optimize
 from scipy.optimize import approx_fprime  # Importing the approx_fprime function from scipy.optimize
+from auth import require_login
 
+require_login()
 st.set_page_config(layout="wide")
 
 
@@ -42,11 +43,11 @@ csss="""
 
             }
             
-            div.st-emotion-cache-z2tz16.e1f1d6gn0
+            div.st-emotion-cache-qbiigm.e1wguzas3
             {
             background-color: #ffffff;
             }
-            div.st-emotion-cache-1inydi6.e1f1d6gn0
+            div.st-emotion-cache-qbiigm.e1wguzas3
             {
             background-color: #ffffff;
             }
@@ -54,7 +55,7 @@ csss="""
             {
             background-color: #ffffff;
             }
-            div.st-emotion-cache-14teyp2.e1f1d6gn0
+            div.st-emotion-cache-1et9kqr.e1wguzas3
             {
             background-color: #ffffff;
             }
@@ -411,7 +412,7 @@ def get_snowflake_data():
 #     return snapshot_data, sim_snowflake_data
 
 
-output_path = "Output_data.csv"
+output_path = "Optimization Output Files\Book1.csv"
 
 if os.path.exists(output_path):
     try:
@@ -1906,7 +1907,7 @@ def anl_curv(df,edited_input_Data):
                         jac=custom_gradient,
                         constraints=constraints,
                         bounds=bounds,
-                        options={"maxiter": 100}
+                        options={"maxiter": 10000}
                 )
         return result
     result=minimzer_fun()
@@ -2045,7 +2046,7 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
                             revenue[i] = calculate_revenue(x[idx[i]], C1_values[i], C2_values[i], C3_values[i], C4_values[i], CURVE_TYPE_values[i], CPM_values[i]*CPM_ADJU[i], adjustment_factor_values[i], ref_adj_fctr_values[i], tactic_adj_fctr_values[i]*COEF_ADJU[i], seasonal_adj_fctr_values[i], ADSTOCK_X_values[i], ECOMM_ROI_values[i])
                         # print("Profit :",np.sum(revenue),"Spend :",np.sum(x))
                         return -np.sum(revenue)
-                  
+                    import torch
                    
 
                     # ---------------------- HILL FUNCTION ----------------------
@@ -2279,57 +2280,109 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
                         bounds=bounds,
                         options={
                             'disp': True,
-                            "maxiter": 10000,'eps':1e-6,'ftol':1e1
+                            "maxiter": 100000,'eps':1e-6,'ftol':1e-1
                         }
                         )
+                    # st.write(result)
                     data['OPTIMZED_SPEND']=result.x
                     mapping = {"Hill": 1, "Power": 2, "Logistic": 3}
                     reverse_mapping = {v: k for k, v in mapping.items()}
                     data["CURVE_TYPE"] = data["CURVE_TYPE"].map(reverse_mapping).fillna("Unknown")
+                    # err
                     # st.write(result)
                     # st.dataframe(data)
                     # data['OPTIMZED_SPEND'] = data['Actual Spend (Selected Months)']
 
                     
-                    def update_optimized_profit_by_tactic(data, df_compare):
+                    # def update_optimized_profit_by_tactic(data, df_compare):
+                    #     data = data.copy()
+                    #     # st.write("data before update_optimized_profit_by_tactic")
+                    #     # data
+                    #     # df_compare 
+                    #     df_compare = df_compare.copy()
+    
+                    #     # Round spend_diff for matching
+                    #     data['spend_diff'] = (data['OPTIMZED_SPEND'] / data['Actual Spend (Selected Months)']).round(2)
+                    #     data
+                    #     df_compare['spend_multiplier'] = df_compare['spend_multiplier'].round(2)
+    
+                    #     # Initialize OPTIMIZED_PROFIT as NaN
+                    #     data['OPTIMIZED_PROFIT'] = float('nan')
+    
+                    #     # Loop over unique Actual Tactic values in data
+                    #     for tactic in data['Actual Tactic'].unique():
+                    #         # Filter rows in data for this tactic
+                    #         data_idx = data['Actual Tactic'] == tactic
+                    #         spend_diff_subset = data.loc[data_idx, 'spend_diff']
+        
+                    #         # Filter df_compare rows for matching channel
+                    #         df_subset = df_compare[df_compare['channel'] == tactic]
+        
+                    #         # Create lookup for this channel
+                    #         lookup = dict(zip(df_subset['spend_multiplier'], df_subset['incremental_outcome']))
+        
+                    #         # Map only for this tactic
+                    #         data.loc[data_idx, 'OPTIMIZED_PROFIT'] = spend_diff_subset.map(lookup)
+    
+                    #     # Drop temporary spend_diff column if you don't want it
+                    #     data = data.drop(columns=['spend_diff'])
+    
+                    #     return data
+                    def update_optimized_profit_by_tactic(
+                        data, 
+                        df_compare, 
+                        optimized_spend_col="OPTIMZED_SPEND", 
+                        actual_spend_col="Actual Spend (Selected Months)",
+                        tactic_col="Actual Tactic",
+                        channel_col="channel",
+                        profit_col="incremental_outcome"
+                    ):
+                        # Copy for safety
                         data = data.copy()
-                        # st.write("data before update_optimized_profit_by_tactic")
-                        # data
-                        # df_compare 
                         df_compare = df_compare.copy()
-    
-                        # Round spend_diff for matching
-                        data['spend_diff'] = (data['OPTIMZED_SPEND'] / data['Actual Spend (Selected Months)']).round(2)
-                        df_compare['spend_multiplier'] = df_compare['spend_multiplier'].round(2)
-    
-                        # Initialize OPTIMIZED_PROFIT as NaN
-                        data['OPTIMIZED_PROFIT'] = float('nan')
-    
-                        # Loop over unique Actual Tactic values in data
-                        for tactic in data['Actual Tactic'].unique():
-                            # Filter rows in data for this tactic
-                            data_idx = data['Actual Tactic'] == tactic
-                            spend_diff_subset = data.loc[data_idx, 'spend_diff']
-        
-                            # Filter df_compare rows for matching channel
-                            df_subset = df_compare[df_compare['channel'] == tactic]
-        
-                            # Create lookup for this channel
-                            lookup = dict(zip(df_subset['spend_multiplier'], df_subset['incremental_outcome']))
-        
-                            # Map only for this tactic
-                            data.loc[data_idx, 'OPTIMIZED_PROFIT'] = spend_diff_subset.map(lookup)
-    
-                        # Drop temporary spend_diff column if you don't want it
-                        data = data.drop(columns=['spend_diff'])
-    
+
+                        # --- 1. Pre-calc rounded multipliers ---
+                        data["spend_diff"] = (data[optimized_spend_col] / data[actual_spend_col]).round(2)
+                        df_compare["spend_multiplier"] = df_compare["spend_multiplier"].round(2)
+
+                        # --- 2. Merge to get OPTIMIZED_PROFIT ---
+                        merged_opt = data.merge(
+                            df_compare[[channel_col, "spend_multiplier", profit_col]],
+                            how="left",
+                            left_on=[tactic_col, "spend_diff"],
+                            right_on=[channel_col, "spend_multiplier"]
+                        )
+                        data["OPTIMIZED_PROFIT"] = merged_opt[profit_col]
+
+                        # --- 3. Merge to get Actual Profit (spend_multiplier == 1) ---
+                        df_actual_profit = (
+                            df_compare[df_compare["spend_multiplier"] == 1][[channel_col, profit_col]]
+                            .rename(columns={profit_col: "Fetch_Actual_Profit"})
+                        )
+                        data = data.merge(
+                            df_actual_profit,
+                            how="left",
+                            left_on=tactic_col,
+                            right_on=channel_col
+                        )
+                        data["Actual Profit"] = data["Fetch_Actual_Profit"]
+                        data["Actual FEC"] = data["Fetch_Actual_Profit"]
+
+                        # --- 4. Cleanup ---
+                        data = data.drop(columns=["Fetch_Actual_Profit", "spend_diff", channel_col])
+
                         return data
+
+
+
 
                     df_compare=pd.read_excel(r'final_response_curves.xlsx',sheet_name='response_curves')
                     df_compare = df_compare[df_compare['metric'] == 'mean']
                     # df_compare['channel']=df_compare['channel'].str.replace(r'\btotal\b', '', regex=True)
                     data=update_optimized_profit_by_tactic(data,df_compare)
-
+                    # data
+                    # data[['Actual Tactic','Actual Profit','OPTIMZED_SPEND','OPTIMIZED_PROFIT']]
+                    # ere
                     # data.to_csv("Optimization Output Files\compare.csv")
                     
 
@@ -2370,7 +2423,7 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
 
                     # st.dataframe(data)
                     # st.write(result['message'])                 
-                    output_path = "Output_data.csv"
+                    output_path = "Optimization Output Files\Book1.csv"
                     job = data['JOB_ID'].iloc[0]
                     scenario = data['COMMENTS'].iloc[0]
 
@@ -2387,10 +2440,12 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
                     first_row_for_base['Level 3']= 'Base Total'
                     # df_compare
                     # df_compare[df_compare['channel'] == 'BASE']['spend']
-                    first_row_for_base['Actual Spend (Selected Months)'] = df_compare[df_compare['channel'] == 'BASE']['spend'].iloc[0]
+                    first_row_for_base['Actual Spend (Selected Months)'] = 0
+                    # df_compare[df_compare['channel'] == 'BASE']['spend'].iloc[0]
                     first_row_for_base['Actual Profit'] = df_compare[df_compare['channel'] == 'BASE']['incremental_outcome'].iloc[0]
                     first_row_for_base['Actual FEC'] =df_compare[df_compare['channel'] == 'BASE']['incremental_outcome'].iloc[0]
-                    first_row_for_base['OPTIMZED_SPEND'] = df_compare[df_compare['channel'] == 'BASE']['spend'].iloc[0]
+                    first_row_for_base['OPTIMZED_SPEND'] = 0
+                    # df_compare[df_compare['channel'] == 'BASE']['spend'].iloc[0]
                     first_row_for_base['OPTIMIZED_PROFIT'] = df_compare[df_compare['channel'] == 'BASE']['incremental_outcome'].iloc[0]
                     first_row_for_base['OPTIMIZED_FEC'] =df_compare[df_compare['channel'] == 'BASE']['incremental_outcome'].iloc[0]
                     # first_row_for_base

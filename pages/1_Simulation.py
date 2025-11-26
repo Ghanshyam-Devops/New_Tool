@@ -10,7 +10,9 @@ import ast
 import random
 from datetime import timedelta, datetime
 from scipy.special import expit
+from auth import require_login
 
+require_login()
 
 st.set_page_config(layout="wide")
 #from snowflake.snowpark.context import get_active_session
@@ -39,7 +41,15 @@ csss="""
                 # place-items: center;
 
             }
-            div.st-emotion-cache-z2tz16.e1f1d6gn0
+            div.st-emotion-cache-qbiigm.e1wguzas3
+            {
+            background-color: #ffffff;
+            }
+            div.st-emotion-cache-1et9kqr.e1wguzas3
+            {
+            background-color: #ffffff;
+            }
+            div.st-emotion-cache-1ne20ew.e1wguzas3
             {
             background-color: #ffffff;
             }
@@ -1190,32 +1200,117 @@ def profit_cal(un_sim_grouped_data):
     
     # output_df=output_df[output_df['Simulation Spend_WK']>1]
     # output_df["BUDGET_WEEK_START_DT"]=output_df["BUDGET_WEEK_START_DT"].dt.strftime('%d-%m-%y')
+##########workin version############
+    # output_df['Actual Profit']=[calculate_revenue(row["Actual Spend (Selected Months)"], row["C1"], row["C2"], row["C3"], row["C4"], 
+    #                                               row["CURVE_TYPE"], row["CPM"], row["ADJUSTMENT_FACTOR"], row["REF_ADJ_FCTR"], row["TACTIC_ADJ_FCTR"]*row["Coef adjustment"], 
+    #                                               row["SEASONAL_ADJ_FCTR"], row['ADSTOCK_X_Ana'], row["ECOMM_ROI"]) for i, row in output_df.iterrows()]
 
-    output_df['Actual Profit']=[calculate_revenue(row["Actual Spend (Selected Months)"], row["C1"], row["C2"], row["C3"], row["C4"], 
-                                                  row["CURVE_TYPE"], row["CPM"], row["ADJUSTMENT_FACTOR"], row["REF_ADJ_FCTR"], row["TACTIC_ADJ_FCTR"]*row["Coef adjustment"], 
-                                                  row["SEASONAL_ADJ_FCTR"], row['ADSTOCK_X_Ana'], row["ECOMM_ROI"]) for i, row in output_df.iterrows()]
+    # # output_df['Actual Profit']=[calculate_revenue(row['Actual Spend (Selected Months)'], row["C1"], row["C2"], row["C3"], row["C4"], 
+    # #                                               row["CURVE_TYPE"], row["CPM"], row["ADJUSTMENT_FACTOR"], row["REF_ADJ_FCTR"], row["TACTIC_ADJ_FCTR"], 
+    # #                                               row["SEASONAL_ADJ_FCTR"], row["ADSTOCK_X_Ana"], row["ECOMM_ROI"]) for i, row in output_df.iterrows()]
 
-    # output_df['Actual Profit']=[calculate_revenue(row['Actual Spend (Selected Months)'], row["C1"], row["C2"], row["C3"], row["C4"], 
-    #                                               row["CURVE_TYPE"], row["CPM"], row["ADJUSTMENT_FACTOR"], row["REF_ADJ_FCTR"], row["TACTIC_ADJ_FCTR"], 
-    #                                               row["SEASONAL_ADJ_FCTR"], row["ADSTOCK_X_Ana"], row["ECOMM_ROI"]) for i, row in output_df.iterrows()]
+    # # st.write("INSIDE PROFIT CAL")
+    # # st.write(output_df.groupby("Tactic").agg({'Actual Profit': 'sum',
+    # #                                           'Simulation Profit': 'sum',
+    # #                                           'Actual Spend (Selected Months)' : 'sum',
+    # #                                           'Simulation Spend_WK' : 'sum'}))
+    # # st.write(output_df)
 
-    # st.write("INSIDE PROFIT CAL")
-    # st.write(output_df.groupby("Tactic").agg({'Actual Profit': 'sum',
-    #                                           'Simulation Profit': 'sum',
-    #                                           'Actual Spend (Selected Months)' : 'sum',
-    #                                           'Simulation Spend_WK' : 'sum'}))
-    # st.write(output_df)
-
-    output_df[['Actual Spend (Selected Months)','Simulation Spend_WK']]=output_df[['Actual Spend (Selected Months)','Simulation Spend_WK']].round(2)
+    # output_df[['Actual Spend (Selected Months)','Simulation Spend_WK']]=output_df[['Actual Spend (Selected Months)','Simulation Spend_WK']].round(2)
 
 
-    output_df["Actual FEC"]=output_df['Actual Profit']*output_df['FEC_FCTR']
-    output_df["Simulation FEC"]=output_df['Simulation Profit']*output_df['FEC_FCTR']
+    # output_df["Actual FEC"]=output_df['Actual Profit']*output_df['FEC_FCTR']
+    # output_df["Simulation FEC"]=output_df['Simulation Profit']*output_df['FEC_FCTR']
     
-    output_df["Actual LTE Profit"]=output_df["Actual Profit"]*output_df["LTE_FCTR"]
-    output_df["Actual LTE FEC"]=output_df["Actual LTE Profit"]*output_df["FEC_FCTR"]
-    output_df["Simulation LTE Profit"]=output_df["Simulation Profit"]*output_df["LTE_FCTR"]
-    output_df["Simulation LTE FEC"]=output_df["Simulation LTE Profit"]*output_df["FEC_FCTR"]
+    # output_df["Actual LTE Profit"]=output_df["Actual Profit"]*output_df["LTE_FCTR"]
+    # output_df["Actual LTE FEC"]=output_df["Actual LTE Profit"]*output_df["FEC_FCTR"]
+    # output_df["Simulation LTE Profit"]=output_df["Simulation Profit"]*output_df["LTE_FCTR"]
+    # output_df["Simulation LTE FEC"]=output_df["Simulation LTE Profit"]*output_df["FEC_FCTR"]
+###########woring version end#############
+    def update_profit_with_factors(
+        data, 
+        df_compare, 
+        profit_col="incremental_outcome",
+        tactic_col="Actual Tactic",
+        channel_col="channel",
+        fec_factor_col="FEC_FCTR",
+        lte_factor_col="LTE_FCTR",
+        simulation_profit_col="Simulation Profit"
+    ):
+        """
+        Update Actual Profit and compute related FEC and LTE columns.
+        """
+        # Copy for safety
+        data = data.copy()
+        df_compare = df_compare.copy()
+
+        # --- 1. Merge to get Actual Profit (spend_multiplier == 1) ---
+        df_actual_profit = (
+            df_compare[df_compare["spend_multiplier"] == 1][[channel_col, profit_col]]
+            .rename(columns={profit_col: "Fetch_Actual_Profit"})
+        )
+
+        data = data.merge(
+            df_actual_profit,
+            how="left",
+            left_on=tactic_col,
+            right_on=channel_col
+        )
+
+        # --- 2. Compute related columns ---
+        # Actual FEC and Simulation FEC
+        data["Actual Profit"] = data["Fetch_Actual_Profit"]
+        data["Actual FEC"] = data["Actual Profit"] * data[fec_factor_col]
+        data = data.drop(columns=[channel_col])
+
+        # df_actual_profit = (
+        #     df_compare[df_compare["spend_multiplier"] == 1][[channel_col, profit_col]]
+        #     .rename(columns={profit_col: "Fetch_Simulation_Profit"})
+        # )
+
+        # data = data.merge(
+        #     df_actual_profit,
+        #     how="left",
+        #     left_on=tactic_col,
+        #     right_on=channel_col
+        # )
+        data["spend_diff"] = (data["Simulation Spend_WK"] / data["Actual Spend (Selected Months)"]).round(2)
+        df_compare["spend_multiplier"] = df_compare["spend_multiplier"].round(2)
+
+        # --- 2. Merge to get OPTIMIZED_PROFIT ---
+        data = data.merge(
+            df_compare[[channel_col, "spend_multiplier", profit_col]],
+            how="left",
+            left_on=[tactic_col, "spend_diff"],
+            right_on=[channel_col, "spend_multiplier"])
+        # data
+        data['Simulation Profit'] = data['incremental_outcome']
+        data["Simulation FEC"] = data['Simulation Profit'] * data[fec_factor_col]
+        data = data.drop(columns=[channel_col])
+        # LTE-related columns
+        data["Actual LTE Profit"] = data["Actual Profit"] * data[lte_factor_col]
+        data["Actual LTE FEC"] = data["Actual LTE Profit"] * data[fec_factor_col]
+        data["Simulation LTE Profit"] = data['Simulation Profit'] * data[lte_factor_col]
+        data["Simulation LTE FEC"] = data["Simulation LTE Profit"] * data[fec_factor_col]
+
+        # --- 3. Cleanup temporary merge column ---
+        
+
+        return data
+    df_compare = pd.read_excel(r'final_response_curves.xlsx', sheet_name='response_curves')
+    df_compare = df_compare[df_compare['metric'] == 'mean']
+
+    # --- 2. Update output_df with Actual Profit and FEC/LTE calculations ---
+    output_df = update_profit_with_factors(
+        data=output_df,
+        df_compare=df_compare,
+        profit_col="incremental_outcome",
+        tactic_col="Actual Tactic",
+        channel_col="channel",
+        fec_factor_col="FEC_FCTR",
+        lte_factor_col="LTE_FCTR",
+        simulation_profit_col="Simulation Profit"
+    )
 
     # st.write("PRE YEAR PROFT")
     # st.write(output_df.groupby(['Actual Tactic', 'Yearly']).agg({'Actual Spend (Selected Months)' : 'sum',
@@ -1241,9 +1336,9 @@ def profit_cal(un_sim_grouped_data):
 #     x, c1, c2, c3, c4, curve_type, CPM, adjustment_factor, ref_adj_fctr, tactic_adj_fctr, seasonal_adj_fctr, ADSTOCK_X, ECOMM_ROI
 # )
     # st.write(calculate_revenue(30866.68,8.013804476,1.602576056,0,0,'Power',12000,1,4, 0.67,1,1.102326773,0 ) )
-    # st.session_state.Yearly_view=True
+    # st.session_state.Sim_Yearly_view=True
 
-    if st.session_state.Yearly_view==True:
+    if st.session_state.Sim_Yearly_view==True:
         # grp_output_df = output_df[output_df["Yearly"].isin(['2023']) ].groupby(['Brand', 
         #                                                                         'Tactic']).agg({'Actual Spend (Selected Months)': 'sum','Actual Profit': 'sum', 
         #                                                                                         'Simulation Spend_WK': 'sum', 'Simulation Profit' : 'sum',
@@ -1519,7 +1614,7 @@ with st.container(border=True, height=650):
 
     
     with col3:
-        # download_template=st.button("Download Templete", use_container_width=True)
+        # download_template=st.button("Download Template", use_container_width=True)
         @st.cache_data
         def convert_df(df):
             # IMPORTANT: Cache the conversion to prevent computation on every rerun
@@ -1528,7 +1623,7 @@ with st.container(border=True, height=650):
         csv = convert_df(st.session_state['sim_grouped_data'])
         
         st.download_button(
-            label="Download Templete",
+            label="Download Template",
             data=csv,
             file_name=str(brand_filter)+"_"+Period_filter+"_"+Tactic_Type_filter+"_"+str(datetime.now().strftime("%d_%m_%y %H_%M"))+".csv",
             mime="text/csv",
@@ -1734,7 +1829,7 @@ else:
 
     if "grp_output_df" not in st.session_state:
         st.warning("PLEASE START THE SIMULATION TO VIEW THE RESULT.", icon="⚠️")
-        st.session_state.Yearly_view=False
+        st.session_state.Sim_Yearly_view=False
 
     elif st.session_state.update_status=="TRUE":
         st.warning("PLEASE START THE SIMULATION TO VIEW THE RESULT.", icon="⚠️")
@@ -1759,7 +1854,7 @@ else:
 
         st.session_state.save_enable=False
 
-        with st.container(border=True):
+        with st.container(border=False):
             if st.session_state.save_enable==True:  
                 c1,c2,c3=st.columns(3)
                 with c1:
@@ -1841,7 +1936,7 @@ else:
         lte_fec=False
         if yly=="By Entire Year":
             with st.spinner(text="Calculating ..."):
-                st.session_state.Yearly_view=True
+                st.session_state.Sim_Yearly_view=True
                 
 
                 profit_cal(st.session_state['un_sim_grouped_data'])
@@ -1849,7 +1944,7 @@ else:
     
         else:
             with st.spinner(text="Calculating ..."):
-                st.session_state.Yearly_view=False
+                st.session_state.Sim_Yearly_view=False
                 
                   
                 profit_cal(st.session_state['un_sim_grouped_data'])
