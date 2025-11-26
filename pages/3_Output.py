@@ -174,7 +174,7 @@ def get_snowflake_Data(date = (None, None), actual_data_yr_filter1 = "2025_04 Ro
 
     #st.dataframe(output_history_data.head(2))
 
-    output_history_data = pd.read_csv("output_file.csv")
+    output_history_data = pd.read_excel("output_file.xlsx")
     # st.write(output_history_data.shape
     output_history_data = output_history_data.reset_index(drop=True)
     # output_history_data
@@ -182,7 +182,12 @@ def get_snowflake_Data(date = (None, None), actual_data_yr_filter1 = "2025_04 Ro
                                         'OPTIMIZED_FEC': 'OPTIM/SIM_FEC',
                                         'OPTIMIZED_PROFIT': 'OPTIM/SIM_PROFIT'}, inplace=True)
     output_history_data
-    output_history_data[['DATE_only', 'TIME']] = output_history_data['DATE'].str.split(' ',expand=True)
+    # output_history_data[['DATE_only', 'TIME']] = output_history_data['DATE'].str.split(' ',expand=True)
+    # Convert DATE column to string if it's not already
+    output_history_data['DATE'] = output_history_data['DATE'].astype(str)
+
+    # Split the 'DATE' column into 'DATE_only' and 'TIME'
+    output_history_data[['DATE_only', 'TIME']] = output_history_data['DATE'].str.split(' ', expand=True)
 
     #st.dataframe(output_history_data)
 

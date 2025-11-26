@@ -412,12 +412,12 @@ def get_snowflake_data():
 #     return snapshot_data, sim_snowflake_data
 
 
-output_path = "output_file.csv"
+output_path = "output_file.xlsx"
 
 if os.path.exists(output_path):
     try:
-        check_df = pd.read_csv(output_path)
-        st.write(check_df.shape)
+        check_df = pd.read_excel(output_path)
+        # st.write(check_df.shape)
         comments_list = check_df['COMMENTS'].unique().tolist()
     except pd.errors.EmptyDataError:
         check_df = pd.DataFrame()
@@ -2423,7 +2423,7 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
 
                     # st.dataframe(data)
                     # st.write(result['message'])                 
-                    output_path = "output_file.csv"
+                    output_path = "output_file.xlsx"
                     job = data['JOB_ID'].iloc[0]
                     scenario = data['COMMENTS'].iloc[0]
 
@@ -2449,9 +2449,12 @@ if Optimizing_button: # and min_value<=Variable_Spend<=max_value
                     first_row_for_base['OPTIMIZED_PROFIT'] = df_compare[df_compare['channel'] == 'BASE']['incremental_outcome'].iloc[0]
                     first_row_for_base['OPTIMIZED_FEC'] =df_compare[df_compare['channel'] == 'BASE']['incremental_outcome'].iloc[0]
                     # first_row_for_base
-                    data = pd.concat([first_row_for_base, data], ignore_index=True)
+                    old_data=pd.read_excel(output_path)
+                    data = pd.concat([first_row_for_base, data,old_data], ignore_index=True)
+################################################################################################### 
+                    
 
-                    data.to_csv(output_path, mode = 'a', header = False ,index=False)
+                    data.to_excel(output_path, index=False)
                     # data.to_csv(output_path, mode = 'a', header = False ,index=False)
 ###################################################################################################
 
