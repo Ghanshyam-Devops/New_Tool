@@ -181,7 +181,7 @@ def get_snowflake_Data(date = (None, None), actual_data_yr_filter1 = "2025_04 Ro
     output_history_data.rename(columns={'OPTIMZED_SPEND': 'OPTIM/SIM_SPEND',
                                         'OPTIMIZED_FEC': 'OPTIM/SIM_FEC',
                                         'OPTIMIZED_PROFIT': 'OPTIM/SIM_PROFIT'}, inplace=True)
-    
+    output_history_data
     output_history_data[['DATE_only', 'TIME']] = output_history_data['DATE'].str.split(' ',expand=True)
 
     #st.dataframe(output_history_data)

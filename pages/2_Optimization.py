@@ -417,7 +417,7 @@ output_path = "output_file.csv"
 if os.path.exists(output_path):
     try:
         check_df = pd.read_csv(output_path)
-        #st.write(check_df.shape)
+        st.write(check_df.shape)
         comments_list = check_df['COMMENTS'].unique().tolist()
     except pd.errors.EmptyDataError:
         check_df = pd.DataFrame()
